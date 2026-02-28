@@ -224,6 +224,7 @@ Every tool documented in this reference has extensive official documentation. He
 ## 👤 Author
 
 Built as a deep-dive learning project to move from knowing CI/CD by name to understanding it by design. Every tool listed, every configuration snippet shown, every architectural decision explained — researched and understood before being written down.
+
 -RITESSH PAWAR 
 riteshpawar754@gmail.com
 ---
