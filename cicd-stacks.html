@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD Stack Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f13;
+  --surface: #16181f;
+  --surface2: #1d2028;
+  --border: #262932;
+  --text: #d4cfc9;
+  --muted: #5c6070;
+  --amber: #f0a500;
+  --amber-dim: rgba(240,165,0,0.12);
+  --green: #3ecf8e;
+  --green-dim: rgba(62,207,142,0.1);
+  --blue: #4f9cf9;
+  --blue-dim: rgba(79,156,249,0.1);
+  --red: #f87070;
+  --red-dim: rgba(248,112,112,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --cyan: #22d3ee;
+  --cyan-dim: rgba(34,211,238,0.1);
+  --orange: #fb923c;
+  --orange-dim: rgba(251,146,60,0.1);
+  --pink: #f472b6;
+  --pink-dim: rgba(244,114,182,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Fraunces',serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* grid noise overlay */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(240,165,0,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,165,0,0.015) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:40px 24px 80px;}
+
+/* ── HEADER ── */
+.hdr{
+  display:flex;align-items:flex-start;gap:24px;
+  margin-bottom:48px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:32px;
+}
+.hdr-badge{
+  background:var(--amber);
+  color:#000;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:2px;
+  padding:4px 10px;
+  border-radius:3px;
+  white-space:nowrap;
+  margin-top:8px;
+}
+.hdr-text h1{
+  font-size:clamp(26px,5vw,46px);
+  font-weight:600;
+  line-height:1.1;
+  color:#ede8e1;
+  margin-bottom:10px;
+}
+.hdr-text h1 em{
+  font-style:italic;
+  color:var(--amber);
+}
+.hdr-text p{
+  font-size:16px;
+  color:var(--muted);
+  font-weight:300;
+  line-height:1.6;
+  max-width:540px;
+}
+
+/* ── STACK TABS ── */
+.stack-nav{
+  display:flex;gap:4px;flex-wrap:wrap;
+  margin-bottom:32px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:6px;
+}
+.stack-btn{
+  flex:1;min-width:160px;
+  background:none;border:none;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;
+  letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);
+  padding:10px 16px;
+  border-radius:7px;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:8px;
+  white-space:nowrap;
+}
+.stack-btn:hover{color:var(--text);background:var(--surface2);}
+.stack-btn.active{
+  color:#000;
+  font-weight:600;
+}
+.stack-btn .dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+
+/* ── STACK PANELS ── */
+.stack-panel{display:none;}
+.stack-panel.active{display:block;}
+
+/* ── PIPELINE FLOW BAR ── */
+.flow-bar{
+  display:flex;align-items:center;gap:0;
+  margin-bottom:36px;
+  overflow-x:auto;
+  padding-bottom:8px;
+}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;
+  gap:6px;
+  padding:12px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:none;
+  min-width:100px;
+  flex:1;
+  cursor:pointer;
+  transition:background 0.15s;
+  text-align:center;
+}
+.flow-step:first-child{border-left:1px solid var(--border);border-radius:8px 0 0 8px;}
+.flow-step:last-child{border-radius:0 8px 8px 0;}
+.flow-step:hover{background:var(--surface2);}
+.flow-step.active-step{background:var(--surface2);border-top:2px solid var(--step-color);}
+.flow-step .fs-num{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:var(--muted);
+}
+.flow-step .fs-icon{font-size:20px;}
+.flow-step .fs-name{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;font-weight:600;
+  color:var(--step-color);
+  letter-spacing:0.5px;
+}
+
+/* ── STAGE GRID ── */
+.stages{display:flex;flex-direction:column;gap:20px;}
+
+.stage-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  transition:border-color 0.2s;
+}
+.stage-card:hover{border-color:var(--sc-color);}
+
+.stage-head{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.stage-num{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;
+  color:var(--muted);
+  width:24px;flex-shrink:0;
+}
+.stage-icon-wrap{
+  width:40px;height:40px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  background:var(--sc-bg);
+  flex-shrink:0;
+}
+.stage-title-wrap{flex:1;}
+.stage-title{
+  font-size:17px;font-weight:600;
+  color:#ede8e1;
+  margin-bottom:2px;
+}
+.stage-subtitle{
+  font-size:12px;
+  color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:400;
+}
+.stage-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.s-badge{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;font-weight:600;
+  padding:3px 8px;
+  border-radius:4px;
+  border:1px solid var(--sc-color);
+  color:var(--sc-color);
+  background:var(--sc-bg);
+  white-space:nowrap;
+}
+
+/* tool rows inside card */
+.stage-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+}
+@media(max-width:700px){.stage-body{grid-template-columns:1fr;}}
+
+.tool-col{
+  padding:20px 22px;
+  border-right:1px solid var(--border);
+}
+.tool-col:last-child{border-right:none;}
+
+.col-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.col-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.tool-row{
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:12px;
+}
+.tool-row:last-child{margin-bottom:0;}
+.t-icon{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--sc-bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+  margin-top:1px;
+}
+.t-body{}
+.t-name{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;font-weight:600;
+  color:var(--sc-color);
+  margin-bottom:3px;
+}
+.t-desc{
+  font-size:12px;color:var(--muted);
+  line-height:1.5;
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:400;
+}
+
+/* code snippet */
+.code-col{
+  padding:0;
+  background:#0a0b0f;
+}
+.code-col .col-label{
+  padding:14px 20px 0;
+  margin-bottom:10px;
+}
+.code-block{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  line-height:1.7;
+  color:#b8c0cc;
+  padding:0 20px 16px;
+  white-space:pre;
+  overflow-x:auto;
+}
+.ck{color:#4f9cf9;}   /* keyword */
+.cs{color:#3ecf8e;}   /* string */
+.cc{color:#5c6070;}   /* comment */
+.cn{color:#f0a500;}   /* name/key */
+.cv{color:#a78bfa;}   /* value/var */
+.co{color:#fb923c;}   /* operator */
+
+/* 3-col layout for some stages */
+.stage-body-3{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:0;
+}
+@media(max-width:900px){.stage-body-3{grid-template-columns:1fr;}}
+
+/* ── COMPARISON TABLE ── */
+.cmp-wrap{
+  margin-top:48px;
+}
+.cmp-header{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:12px;
+}
+.cmp-header::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.cmp-table{
+  width:100%;border-collapse:collapse;
+  font-size:12px;
+  border-radius:10px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.cmp-table th{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);
+  background:var(--surface);
+  padding:12px 16px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.cmp-table td{
+  padding:10px 16px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  color:#94a3b8;
+  vertical-align:top;
+}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table td:first-child{
+  color:var(--amber);font-weight:600;
+  width:130px;
+}
+.pill{
+  display:inline-block;
+  padding:2px 7px;border-radius:3px;
+  font-size:10px;font-weight:600;
+  margin:2px 2px 2px 0;
+}
+.pill-g{background:var(--green-dim);color:var(--green);border:1px solid rgba(62,207,142,0.3);}
+.pill-a{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,165,0,0.3);}
+.pill-r{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,112,112,0.3);}
+.pill-b{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(79,156,249,0.3);}
+.pill-p{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.3);}
+
+/* ── FOOTER NOTE ── */
+.foot-note{
+  margin-top:48px;
+  padding:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--amber);
+  border-radius:8px;
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.7;
+  font-family:'IBM Plex Mono',monospace;
+}
+.foot-note strong{color:var(--amber);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="hdr-badge">CI/CD</div>
+  </div>
+  <div class="hdr-text">
+    <h1>CI/CD Stacks &amp; <em>Tools</em></h1>
+    <p>Four production-grade stacks — GitHub/AWS, GitLab/GCP, Jenkins/On-Prem, Azure DevOps — with exact tools, commands &amp; config at every stage.</p>
+  </div>
+</div>
+
+<!-- STACK TABS -->
+<div class="stack-nav">
+  <button class="stack-btn active" onclick="switchStack(0)" style="background:#f0a500;" id="btn0">
+    <span class="dot" style="background:#000"></span> GitHub + AWS
+  </button>
+  <button class="stack-btn" onclick="switchStack(1)" id="btn1">
+    <span class="dot" style="background:#3ecf8e"></span> GitLab + GCP
+  </button>
+  <button class="stack-btn" onclick="switchStack(2)" id="btn2">
+    <span class="dot" style="background:#4f9cf9"></span> Jenkins + On-Prem
+  </button>
+  <button class="stack-btn" onclick="switchStack(3)" id="btn3">
+    <span class="dot" style="background:#a78bfa"></span> Azure DevOps
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     STACK 0 — GitHub Actions + AWS
+══════════════════════════════════════════════ -->
+<div class="stack-panel active" id="stack0">
+<div class="stages">
+
+  <!-- STAGE 1: SOURCE -->
+  <div class="stage-card" style="--sc-color:var(--amber);--sc-bg:var(--amber-dim);">
+    <div class="stage-head">
+      <div class="stage-num">01</div>
+      <div class="stage-icon-wrap">📁</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Source Control</div>
+        <div class="stage-subtitle">git push → webhook → pipeline trigger</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">GitHub</div>
+        <div class="s-badge">Branch Strategy</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools &amp; Practices</div>
+        <div class="tool-row">
+          <div class="t-icon">🐙</div>
+          <div class="t-body">
+            <div class="t-name">GitHub</div>
+            <div class="t-desc">Host repo. Use branch protection rules on main/master. Require PR reviews + status checks to pass before merge.</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">🌿</div>
+          <div class="t-body">
+            <div class="t-name">Branch Strategy</div>
+            <div class="t-desc">GitFlow or trunk-based. Feature branches → PR → main. Tag releases with semver (v1.2.3).</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">🔔</div>
+          <div class="t-body">
+            <div class="t-name">Webhooks / Events</div>
+            <div class="t-desc">on: push, pull_request, release triggers GitHub Actions automatically. No manual setup needed.</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">📋</div>
+          <div class="t-body">
+            <div class="t-name">Conventional Commits</div>
+            <div class="t-desc">Enforce commit message format: feat:, fix:, chore: — enables automated changelog &amp; semver bumps.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Config / Commands</div>
+        <div class="code-block"><span class="cc"># .github/workflows/ci.yml</span>
+<span class="cn">name</span>: <span class="cs">CI Pipeline</span>
+
+<span class="cn">on</span>:
+  <span class="cn">push</span>:
+    <span class="cn">branches</span>: [<span class="cs">main</span>, <span class="cs">develop</span>]
+  <span class="cn">pull_request</span>:
+    <span class="cn">branches</span>: [<span class="cs">main</span>]
+  <span class="cn">release</span>:
+    <span class="cn">types</span>: [<span class="cs">published</span>]
+
+<span class="cc"># Branch protection (GitHub UI → Settings → Branches)</span>
+<span class="cc"># ✓ Require PR before merging</span>
+<span class="cc"># ✓ Require status checks to pass</span>
+<span class="cc"># ✓ Dismiss stale reviews</span>
+<span class="cc"># ✓ Require signed commits</span>
+
+<span class="cc"># Commit lint check (package.json)</span>
+<span class="cn">scripts</span>:
+  <span class="cs">"commitlint"</span>: <span class="cs">"commitlint --edit"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 2: BUILD -->
+  <div class="stage-card" style="--sc-color:var(--cyan);--sc-bg:var(--cyan-dim);">
+    <div class="stage-head">
+      <div class="stage-num">02</div>
+      <div class="stage-icon-wrap">🔨</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Build</div>
+        <div class="stage-subtitle">compile → lint → docker image</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">GitHub Actions</div>
+        <div class="s-badge">Docker BuildKit</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row">
+          <div class="t-icon">⚡</div>
+          <div class="t-body">
+            <div class="t-name">GitHub Actions Runner</div>
+            <div class="t-desc">ubuntu-latest runners. Use actions/cache to cache node_modules, pip, Maven etc. across runs.</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">🐳</div>
+          <div class="t-body">
+            <div class="t-name">Docker BuildKit</div>
+            <div class="t-desc">Multi-stage builds. Layer caching. --platform linux/amd64 for consistent images. Use .dockerignore aggressively.</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">📦</div>
+          <div class="t-body">
+            <div class="t-name">Language Toolchain</div>
+            <div class="t-desc">Node: npm ci (not install). Python: pip install -r requirements.txt. Java: mvn package -DskipTests.</div>
+          </div>
+        </div>
+        <div class="tool-row">
+          <div class="t-icon">🔍</div>
+          <div class="t-body">
+            <div class="t-name">ESLint / Prettier / tsc</div>
+            <div class="t-desc">Run linter + formatter check + TypeScript compile check. Fail fast on any error before proceeding.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">GitHub Actions — Build Job</div>
+        <div class="code-block"><span class="cn">jobs</span>:
+  <span class="cn">build</span>:
+    <span class="cn">runs-on</span>: <span class="cs">ubuntu-latest</span>
+    <span class="cn">steps</span>:
+      - <span class="cn">uses</span>: <span class="cs">actions/checkout@v4</span>
+
+      - <span class="cn">name</span>: <span class="cs">Cache node_modules</span>
+        <span class="cn">uses</span>: <span class="cs">actions/cache@v3</span>
+        <span class="cn">with</span>:
+          <span class="cn">path</span>: <span class="cs">~/.npm</span>
+          <span class="cn">key</span>: <span class="cs">npm-${{ hashFiles('package-lock.json') }}</span>
+
+      - <span class="cn">name</span>: <span class="cs">Install deps</span>
+        <span class="cn">run</span>: <span class="cs">npm ci</span>
+
+      - <span class="cn">name</span>: <span class="cs">Lint + Type check</span>
+        <span class="cn">run</span>: |
+          <span class="cs">npm run lint</span>
+          <span class="cs">npm run type-check</span>
+
+      - <span class="cn">name</span>: <span class="cs">Build Docker image</span>
+        <span class="cn">run</span>: |
+          <span class="cs">docker build \</span>
+            <span class="cs">--cache-from $ECR_REGISTRY/$IMAGE:latest \</span>
+            <span class="cs">--build-arg BUILDKIT_INLINE_CACHE=1 \</span>
+            <span class="cs">-t $ECR_REGISTRY/$IMAGE:$SHA .</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 3: TEST -->
+  <div class="stage-card" style="--sc-color:var(--purple);--sc-bg:var(--purple-dim);">
+    <div class="stage-head">
+      <div class="stage-num">03</div>
+      <div class="stage-icon-wrap">🧪</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Test</div>
+        <div class="stage-subtitle">unit → integration → e2e → coverage gate</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">Jest</div>
+        <div class="s-badge">Playwright</div>
+        <div class="s-badge">Testcontainers</div>
+      </div>
+    </div>
+    <div class="stage-body-3">
+      <div class="tool-col">
+        <div class="col-label">Unit Tests</div>
+        <div class="tool-row"><div class="t-icon">⚡</div><div class="t-body"><div class="t-name">Jest / Vitest</div><div class="t-desc">Fast, isolated. Mock external deps. Enforce 80% coverage threshold. Run in parallel with --maxWorkers.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🐍</div><div class="t-body"><div class="t-name">pytest / JUnit</div><div class="t-desc">Python: pytest -n auto (parallel). Java: JUnit5 + Mockito. Go: go test ./... -race.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📊</div><div class="t-body"><div class="t-name">Coverage Gate</div><div class="t-desc">jest --coverage --coverageThreshold. codecov.io for PR diff comments.</div></div></div>
+      </div>
+      <div class="tool-col">
+        <div class="col-label">Integration Tests</div>
+        <div class="tool-row"><div class="t-icon">🐳</div><div class="t-body"><div class="t-name">Testcontainers</div><div class="t-desc">Spin up real Postgres, Redis, Kafka in Docker during tests. Automatically cleaned up after.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔗</div><div class="t-body"><div class="t-name">Docker Compose</div><div class="t-desc">services: postgres, redis alongside app. Use github actions services: block for simple cases.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🤝</div><div class="t-body"><div class="t-name">Pact (Contract)</div><div class="t-desc">Consumer-driven contract tests for microservices. Verify API contracts don't break.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Config</div>
+        <div class="code-block"><span class="cn">test</span>:
+  <span class="cn">runs-on</span>: <span class="cs">ubuntu-latest</span>
+  <span class="cn">services</span>:
+    <span class="cn">postgres</span>:
+      <span class="cn">image</span>: <span class="cs">postgres:16</span>
+      <span class="cn">env</span>:
+        <span class="cn">POSTGRES_PASSWORD</span>: <span class="cs">test</span>
+      <span class="cn">ports</span>: [<span class="cs">"5432:5432"</span>]
+    <span class="cn">redis</span>:
+      <span class="cn">image</span>: <span class="cs">redis:7</span>
+      <span class="cn">ports</span>: [<span class="cs">"6379:6379"</span>]
+
+  <span class="cn">steps</span>:
+    - <span class="cn">name</span>: <span class="cs">Unit tests</span>
+      <span class="cn">run</span>: |
+        <span class="cs">jest --coverage \</span>
+          <span class="cs">--coverageThreshold='{"global":{"lines":80}}'</span>
+
+    - <span class="cn">name</span>: <span class="cs">E2E (Playwright)</span>
+      <span class="cn">run</span>: <span class="cs">npx playwright test</span>
+
+    - <span class="cn">name</span>: <span class="cs">Upload coverage</span>
+      <span class="cn">uses</span>: <span class="cs">codecov/codecov-action@v3</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 4: SECURITY -->
+  <div class="stage-card" style="--sc-color:var(--red);--sc-bg:var(--red-dim);">
+    <div class="stage-head">
+      <div class="stage-num">04</div>
+      <div class="stage-icon-wrap">🔐</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Security Scanning</div>
+        <div class="stage-subtitle">SAST · dependency audit · container scan · secrets</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">CodeQL</div>
+        <div class="s-badge">Trivy</div>
+        <div class="s-badge">Snyk</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🔬</div><div class="t-body"><div class="t-name">GitHub CodeQL</div><div class="t-desc">Free SAST built into GitHub. Scans JS, Python, Java, Go etc. for injection flaws, XSS, auth bypass. Runs as Action.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🦠</div><div class="t-body"><div class="t-name">Trivy</div><div class="t-desc">Scans Docker images AND filesystem for CVEs. Also detects misconfigs in IaC (Terraform, Helm). Fast &amp; free.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🐍</div><div class="t-body"><div class="t-name">Snyk / Dependabot</div><div class="t-desc">Dependency vulnerability scanning. Dependabot auto-raises PRs to update vulnerable packages.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🕵️</div><div class="t-body"><div class="t-name">truffleHog / gitleaks</div><div class="t-desc">Scans entire git history for leaked secrets (API keys, passwords). Run on every PR. Block merge if found.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Security Job</div>
+        <div class="code-block"><span class="cn">security</span>:
+  <span class="cn">runs-on</span>: <span class="cs">ubuntu-latest</span>
+  <span class="cn">permissions</span>:
+    <span class="cn">security-events</span>: <span class="cs">write</span>
+  <span class="cn">steps</span>:
+    <span class="cc"># SAST — CodeQL</span>
+    - <span class="cn">uses</span>: <span class="cs">github/codeql-action/init@v3</span>
+      <span class="cn">with</span>: {<span class="cn">languages</span>: <span class="cs">javascript</span>}
+    - <span class="cn">uses</span>: <span class="cs">github/codeql-action/analyze@v3</span>
+
+    <span class="cc"># Container scan</span>
+    - <span class="cn">name</span>: <span class="cs">Trivy image scan</span>
+      <span class="cn">uses</span>: <span class="cs">aquasecurity/trivy-action@master</span>
+      <span class="cn">with</span>:
+        <span class="cn">image-ref</span>: <span class="cs">${{ env.IMAGE_TAG }}</span>
+        <span class="cn">severity</span>: <span class="cs">CRITICAL,HIGH</span>
+        <span class="cn">exit-code</span>: <span class="cs">'1'</span>  <span class="cc"># fail pipeline</span>
+
+    <span class="cc"># Secrets scan</span>
+    - <span class="cn">name</span>: <span class="cs">gitleaks</span>
+      <span class="cn">uses</span>: <span class="cs">gitleaks/gitleaks-action@v2</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 5: ARTIFACT -->
+  <div class="stage-card" style="--sc-color:var(--orange);--sc-bg:var(--orange-dim);">
+    <div class="stage-head">
+      <div class="stage-num">05</div>
+      <div class="stage-icon-wrap">📦</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Artifact Registry</div>
+        <div class="stage-subtitle">tag → push → sign → SBOM</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">Amazon ECR</div>
+        <div class="s-badge">cosign</div>
+        <div class="s-badge">Syft</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🗄️</div><div class="t-body"><div class="t-name">Amazon ECR</div><div class="t-desc">Private Docker registry per AWS account. Enable image scanning on push. Set lifecycle policy to prune old images.</div></div></div>
+        <div class="tool-row"><div class="t-icon">✍️</div><div class="t-body"><div class="t-name">cosign (Sigstore)</div><div class="t-desc">Sign images with a keyless approach using OIDC. Verifiable supply chain. Admission controllers can enforce signatures.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📋</div><div class="t-body"><div class="t-name">Syft — SBOM</div><div class="t-desc">Generate Software Bill of Materials. Attach to image attestation. Required for compliance (SOC2, FedRAMP).</div></div></div>
+        <div class="tool-row"><div class="t-icon">🏷️</div><div class="t-body"><div class="t-name">Tagging Strategy</div><div class="t-desc">Tag with: git SHA (traceability), semver (releases), latest (convenience). Never deploy latest to prod.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Push &amp; Sign to ECR</div>
+        <div class="code-block"><span class="cn">publish</span>:
+  <span class="cn">needs</span>: [<span class="cs">build</span>, <span class="cs">test</span>, <span class="cs">security</span>]
+  <span class="cn">steps</span>:
+    - <span class="cn">name</span>: <span class="cs">Configure AWS credentials</span>
+      <span class="cn">uses</span>: <span class="cs">aws-actions/configure-aws-credentials@v4</span>
+      <span class="cn">with</span>:
+        <span class="cn">role-to-assume</span>: <span class="cs">arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/GHActions</span>
+        <span class="cn">aws-region</span>: <span class="cs">us-east-1</span>
+
+    - <span class="cn">name</span>: <span class="cs">Login + Push to ECR</span>
+      <span class="cn">run</span>: |
+        <span class="cs">aws ecr get-login-password | docker login --username AWS \</span>
+          <span class="cs">--password-stdin $ECR_REGISTRY</span>
+        <span class="cs">docker push $ECR_REGISTRY/$IMAGE:$SHA</span>
+
+    - <span class="cn">name</span>: <span class="cs">Sign image (keyless)</span>
+      <span class="cn">run</span>: <span class="cs">cosign sign --yes $ECR_REGISTRY/$IMAGE:$SHA</span>
+
+    - <span class="cn">name</span>: <span class="cs">Generate SBOM</span>
+      <span class="cn">run</span>: |
+        <span class="cs">syft $ECR_REGISTRY/$IMAGE:$SHA -o spdx-json > sbom.json</span>
+        <span class="cs">cosign attest --predicate sbom.json $ECR_REGISTRY/$IMAGE:$SHA</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 6: DEPLOY -->
+  <div class="stage-card" style="--sc-color:var(--green);--sc-bg:var(--green-dim);">
+    <div class="stage-head">
+      <div class="stage-num">06</div>
+      <div class="stage-icon-wrap">🚀</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Deploy to Kubernetes (EKS)</div>
+        <div class="stage-subtitle">GitOps → ArgoCD → rolling/canary → auto-rollback</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">Amazon EKS</div>
+        <div class="s-badge">ArgoCD</div>
+        <div class="s-badge">Helm</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools &amp; Strategy</div>
+        <div class="tool-row"><div class="t-icon">🔄</div><div class="t-body"><div class="t-name">ArgoCD (GitOps)</div><div class="t-desc">Watches a "config repo" containing Helm values. When CI updates image tag and pushes to config repo, ArgoCD syncs automatically. Full audit trail in git.</div></div></div>
+        <div class="tool-row"><div class="t-icon">⛵</div><div class="t-body"><div class="t-name">Helm Charts</div><div class="t-desc">Package K8s manifests. Separate values files per env: values-dev.yaml, values-staging.yaml, values-prod.yaml.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🕊️</div><div class="t-body"><div class="t-name">Argo Rollouts</div><div class="t-desc">Canary deployments: send 10% → 25% → 100% traffic. Automatically rollback if error rate spikes. Works with AWS ALB.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔑</div><div class="t-body"><div class="t-name">AWS Secrets Manager</div><div class="t-desc">External Secrets Operator pulls secrets from AWS and creates K8s Secrets automatically. No secrets in git ever.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">GitOps Deploy Flow</div>
+        <div class="code-block"><span class="cc"># CI job: update image tag in config repo</span>
+<span class="cn">deploy-staging</span>:
+  <span class="cn">needs</span>: <span class="cs">publish</span>
+  <span class="cn">steps</span>:
+    - <span class="cn">name</span>: <span class="cs">Update Helm values</span>
+      <span class="cn">run</span>: |
+        <span class="cc"># Clone the GitOps config repository</span>
+        <span class="cs">git clone https://github.com/org/k8s-config</span>
+        <span class="cs">cd k8s-config</span>
+
+        <span class="cc"># Update the image tag in staging values</span>
+        <span class="cs">yq e '.image.tag = "${{ env.SHA }}"' \</span>
+          <span class="cs">-i apps/myapp/values-staging.yaml</span>
+
+        <span class="cs">git commit -am "ci: deploy $SHA to staging"</span>
+        <span class="cs">git push</span>
+        <span class="cc"># ArgoCD picks this up and syncs EKS automatically</span>
+
+<span class="cc"># Argo Rollout manifest (canary)</span>
+<span class="cn">strategy</span>:
+  <span class="cn">canary</span>:
+    <span class="cn">steps</span>:
+      - <span class="cn">setWeight</span>: <span class="cv">10</span>
+      - <span class="cn">pause</span>: {<span class="cn">duration</span>: <span class="cs">5m</span>}
+      - <span class="cn">setWeight</span>: <span class="cv">50</span>
+      - <span class="cn">pause</span>: {<span class="cn">duration</span>: <span class="cs">10m</span>}
+      - <span class="cn">setWeight</span>: <span class="cv">100</span>
+    <span class="cn">analysis</span>:
+      <span class="cn">templates</span>:
+        - <span class="cn">templateName</span>: <span class="cs">error-rate</span>  <span class="cc"># auto rollback</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 7: OBSERVE -->
+  <div class="stage-card" style="--sc-color:var(--pink);--sc-bg:var(--pink-dim);">
+    <div class="stage-head">
+      <div class="stage-num">07</div>
+      <div class="stage-icon-wrap">📊</div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Observability</div>
+        <div class="stage-subtitle">logs · metrics · traces · alerts · on-call</div>
+      </div>
+      <div class="stage-badge-row">
+        <div class="s-badge">Datadog</div>
+        <div class="s-badge">OpenTelemetry</div>
+        <div class="s-badge">PagerDuty</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">📈</div><div class="t-body"><div class="t-name">Datadog / CloudWatch</div><div class="t-desc">Metrics, logs, APM traces in one platform. Set deployment markers to correlate error spikes with releases.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔭</div><div class="t-body"><div class="t-name">OpenTelemetry</div><div class="t-desc">Instrument app once, export to any backend. Distributed tracing across microservices. Zero vendor lock-in.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🚨</div><div class="t-body"><div class="t-name">PagerDuty / OpsGenie</div><div class="t-desc">On-call rotations. Alert routing. Auto-escalation. Integrate with Slack for P1 war-room channels.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔁</div><div class="t-body"><div class="t-name">Feedback Loop</div><div class="t-desc">Post-deploy smoke tests via Synthetic Monitoring. Error rate threshold triggers automatic ArgoCD rollback.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">OpenTelemetry + Alerts</div>
+        <div class="code-block"><span class="cc"># otel-collector.yaml — collect from all pods</span>
+<span class="cn">receivers</span>:
+  <span class="cn">otlp</span>:
+    <span class="cn">protocols</span>: {<span class="cn">grpc</span>: {}, <span class="cn">http</span>: {}}
+<span class="cn">exporters</span>:
+  <span class="cn">datadog</span>:
+    <span class="cn">api</span>:
+      <span class="cn">key</span>: <span class="cs">${DD_API_KEY}</span>
+<span class="cn">service</span>:
+  <span class="cn">pipelines</span>:
+    <span class="cn">traces</span>:
+      <span class="cn">receivers</span>: [<span class="cs">otlp</span>]
+      <span class="cn">exporters</span>: [<span class="cs">datadog</span>]
+
+<span class="cc"># Datadog monitor (auto-rollback trigger)</span>
+<span class="cn">type</span>: <span class="cs">metric alert</span>
+<span class="cn">query</span>: <span class="cs">"sum(last_5m):sum:trace.express.request.errors{env:prod}.as_rate() > 0.05"</span>
+<span class="cn">message</span>: <span class="cs">"@pagerduty-prod P1: Error rate &gt; 5%"</span>
+<span class="cn">notify_no_data</span>: <span class="cv">false</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stages -->
+</div><!-- /stack0 -->
+
+
+<!-- ══════════════════════════════════════════════
+     STACK 1 — GitLab CI + GCP
+══════════════════════════════════════════════ -->
+<div class="stack-panel" id="stack1">
+<div class="stages">
+
+  <div class="stage-card" style="--sc-color:var(--amber);--sc-bg:var(--amber-dim);">
+    <div class="stage-head">
+      <div class="stage-num">01</div><div class="stage-icon-wrap">📁</div>
+      <div class="stage-title-wrap"><div class="stage-title">Source Control</div><div class="stage-subtitle">GitLab · Merge Requests · Protected Branches</div></div>
+      <div class="stage-badge-row"><div class="s-badge">GitLab</div><div class="s-badge">Merge Requests</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🦊</div><div class="t-body"><div class="t-name">GitLab (Self-hosted or SaaS)</div><div class="t-desc">Enterprise teams often self-host GitLab on GKE. Merge Requests (MRs) equivalent to GitHub PRs. Built-in CI with .gitlab-ci.yml.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🛡️</div><div class="t-body"><div class="t-name">Protected Branches</div><div class="t-desc">Block force pushes. Require MR approval. Auto-close stale MRs. Use GitLab CODEOWNERS for required reviewers.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">.gitlab-ci.yml trigger</div>
+        <div class="code-block"><span class="cc"># .gitlab-ci.yml</span>
+<span class="cn">stages</span>:
+  - <span class="cs">build</span>
+  - <span class="cs">test</span>
+  - <span class="cs">security</span>
+  - <span class="cs">publish</span>
+  - <span class="cs">deploy</span>
+
+<span class="cc"># Runs on every push, MR, and tag</span>
+<span class="cn">workflow</span>:
+  <span class="cn">rules</span>:
+    - <span class="cn">if</span>: <span class="cs">$CI_PIPELINE_SOURCE == "merge_request_event"</span>
+    - <span class="cn">if</span>: <span class="cs">$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH</span>
+    - <span class="cn">if</span>: <span class="cs">$CI_COMMIT_TAG</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--cyan);--sc-bg:var(--cyan-dim);">
+    <div class="stage-head">
+      <div class="stage-num">02</div><div class="stage-icon-wrap">🔨</div>
+      <div class="stage-title-wrap"><div class="stage-title">Build</div><div class="stage-subtitle">GitLab Runner · Kaniko (rootless Docker in K8s)</div></div>
+      <div class="stage-badge-row"><div class="s-badge">GitLab Runner</div><div class="s-badge">Kaniko</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🏃</div><div class="t-body"><div class="t-name">GitLab Runner (K8s executor)</div><div class="t-desc">Runners execute jobs as Pods on GKE. Scale automatically. Use runner tags to route jobs to specific node pools (GPU, large memory).</div></div></div>
+        <div class="tool-row"><div class="t-icon">🐋</div><div class="t-body"><div class="t-name">Kaniko</div><div class="t-desc">Build Docker images inside Kubernetes without needing Docker daemon or privileged mode. Safer than DinD (Docker in Docker).</div></div></div>
+        <div class="tool-row"><div class="t-icon">💾</div><div class="t-body"><div class="t-name">GitLab Registry Cache</div><div class="t-desc">Use GCS bucket as cache backend. cache: key: $CI_COMMIT_REF_SLUG paths: [node_modules/]</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Build with Kaniko</div>
+        <div class="code-block"><span class="cn">build-image</span>:
+  <span class="cn">stage</span>: <span class="cs">build</span>
+  <span class="cn">image</span>:
+    <span class="cn">name</span>: <span class="cs">gcr.io/kaniko-project/executor:debug</span>
+    <span class="cn">entrypoint</span>: [<span class="cs">""</span>]
+  <span class="cn">script</span>:
+    - <span class="cs">mkdir -p /kaniko/.docker</span>
+    - |
+      <span class="cs">echo "{\"credHelpers\":{\"gcr.io\":\"gcloud\"}}" \</span>
+        <span class="cs">> /kaniko/.docker/config.json</span>
+    - |
+      <span class="cs">/kaniko/executor \</span>
+        <span class="cs">--context $CI_PROJECT_DIR \</span>
+        <span class="cs">--dockerfile Dockerfile \</span>
+        <span class="cs">--destination gcr.io/$GCP_PROJECT/$IMAGE:$CI_COMMIT_SHA \</span>
+        <span class="cs">--cache=true \</span>
+        <span class="cs">--cache-ttl=24h</span>
+  <span class="cn">cache</span>:
+    <span class="cn">key</span>: <span class="cs">$CI_COMMIT_REF_SLUG</span>
+    <span class="cn">paths</span>: [<span class="cs">node_modules/</span>]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--purple);--sc-bg:var(--purple-dim);">
+    <div class="stage-head">
+      <div class="stage-num">03</div><div class="stage-icon-wrap">🧪</div>
+      <div class="stage-title-wrap"><div class="stage-title">Test + Security</div><div class="stage-subtitle">GitLab built-in SAST · DAST · Container scanning</div></div>
+      <div class="stage-badge-row"><div class="s-badge">GitLab SAST</div><div class="s-badge">DAST</div><div class="s-badge">Pytest</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">GitLab Built-in Security</div>
+        <div class="tool-row"><div class="t-icon">🔒</div><div class="t-body"><div class="t-name">GitLab SAST (free tier)</div><div class="t-desc">Just include template: SAST.gitlab-ci.yml. Runs 15+ analyzers (Semgrep, Bandit, SpotBugs). Results appear as MR widget.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🌐</div><div class="t-body"><div class="t-name">GitLab DAST</div><div class="t-desc">Runs OWASP ZAP against a running review app automatically. Catches runtime vulnerabilities SAST can't find.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📦</div><div class="t-body"><div class="t-name">GitLab Container Scanning</div><div class="t-desc">Trivy-powered. Runs against the image you just built. Vulnerability report auto-added to MR.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Include GitLab templates</div>
+        <div class="code-block"><span class="cc"># Include GitLab's managed templates</span>
+<span class="cn">include</span>:
+  - <span class="cn">template</span>: <span class="cs">Security/SAST.gitlab-ci.yml</span>
+  - <span class="cn">template</span>: <span class="cs">Security/DAST.gitlab-ci.yml</span>
+  - <span class="cn">template</span>: <span class="cs">Security/Container-Scanning.gitlab-ci.yml</span>
+  - <span class="cn">template</span>: <span class="cs">Security/Secret-Detection.gitlab-ci.yml</span>
+
+<span class="cc"># Test job</span>
+<span class="cn">pytest</span>:
+  <span class="cn">stage</span>: <span class="cs">test</span>
+  <span class="cn">image</span>: <span class="cs">python:3.12</span>
+  <span class="cn">script</span>:
+    - <span class="cs">pip install -r requirements.txt</span>
+    - <span class="cs">pytest --cov=app --cov-fail-under=80 \</span>
+        <span class="cs">--junitxml=report.xml</span>
+  <span class="cn">coverage</span>: <span class="cs">'/TOTAL.*\s(\d+%)$/'</span>
+  <span class="cn">artifacts</span>:
+    <span class="cn">reports</span>:
+      <span class="cn">junit</span>: <span class="cs">report.xml</span>
+      <span class="cn">coverage_report</span>:
+        <span class="cn">coverage_format</span>: <span class="cs">cobertura</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--green);--sc-bg:var(--green-dim);">
+    <div class="stage-head">
+      <div class="stage-num">04</div><div class="stage-icon-wrap">🚀</div>
+      <div class="stage-title-wrap"><div class="stage-title">Deploy to GKE</div><div class="stage-subtitle">Artifact Registry → Flux CD → Cloud Deploy</div></div>
+      <div class="stage-badge-row"><div class="s-badge">GKE</div><div class="s-badge">Flux CD</div><div class="s-badge">Cloud Deploy</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🗂️</div><div class="t-body"><div class="t-name">Google Artifact Registry</div><div class="t-desc">Successor to GCR. Store Docker images, Helm charts, npm packages in one place. Fine-grained IAM per repo.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🌊</div><div class="t-body"><div class="t-name">Flux CD (GitOps)</div><div class="t-desc">Alternative to ArgoCD. Pull-based. Flux watches your git repo and syncs cluster state. Great for multi-cluster management.</div></div></div>
+        <div class="tool-row"><div class="t-icon">☁️</div><div class="t-body"><div class="t-name">Google Cloud Deploy</div><div class="t-desc">Managed CD service. Define delivery pipelines with promotion gates between dev → staging → prod. Built-in approval steps.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔐</div><div class="t-body"><div class="t-name">Workload Identity</div><div class="t-desc">Pods access GCP services (Pub/Sub, Cloud SQL) without service account keys. Bind K8s ServiceAccount to GCP ServiceAccount.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Deploy + Flux ImagePolicy</div>
+        <div class="code-block"><span class="cc"># Flux ImageRepository — watch registry</span>
+<span class="cn">apiVersion</span>: <span class="cs">image.toolkit.fluxcd.io/v1beta2</span>
+<span class="cn">kind</span>: <span class="cs">ImageRepository</span>
+<span class="cn">spec</span>:
+  <span class="cn">image</span>: <span class="cs">europe-docker.pkg.dev/proj/repo/myapp</span>
+  <span class="cn">interval</span>: <span class="cs">1m</span>
+---
+<span class="cc"># Flux ImagePolicy — which tags to deploy</span>
+<span class="cn">apiVersion</span>: <span class="cs">image.toolkit.fluxcd.io/v1beta2</span>
+<span class="cn">kind</span>: <span class="cs">ImagePolicy</span>
+<span class="cn">spec</span>:
+  <span class="cn">imageRepositoryRef</span>: {<span class="cn">name</span>: <span class="cs">myapp</span>}
+  <span class="cn">policy</span>:
+    <span class="cn">semver</span>: {<span class="cn">range</span>: <span class="cs">&gt;=1.0.0</span>}
+<span class="cc"># Flux auto-updates image tag in git,</span>
+<span class="cc"># then reconciles the cluster. Zero manual steps.</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /stack1 -->
+
+
+<!-- ══════════════════════════════════════════════
+     STACK 2 — Jenkins + On-Premise
+══════════════════════════════════════════════ -->
+<div class="stack-panel" id="stack2">
+<div class="stages">
+
+  <div class="stage-card" style="--sc-color:var(--blue);--sc-bg:var(--blue-dim);">
+    <div class="stage-head">
+      <div class="stage-num">01</div><div class="stage-icon-wrap">🔧</div>
+      <div class="stage-title-wrap"><div class="stage-title">Jenkins + Bitbucket/GitHub</div><div class="stage-subtitle">Traditional enterprise — full control over infra</div></div>
+      <div class="stage-badge-row"><div class="s-badge">Jenkins</div><div class="s-badge">Groovy DSL</div><div class="s-badge">Shared Library</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Setup &amp; Tools</div>
+        <div class="tool-row"><div class="t-icon">🏗️</div><div class="t-body"><div class="t-name">Jenkins Controller + Agents</div><div class="t-desc">Run Jenkins controller on dedicated VM or K8s. Use Jenkins Kubernetes Plugin to spin up ephemeral build pods per job. Never build on the controller node.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📚</div><div class="t-body"><div class="t-name">Shared Library</div><div class="t-desc">Create a @Library('my-pipeline-lib') that centralizes common stages (build, test, deploy). All Jenkinsfiles import it — DRY principle across hundreds of repos.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔌</div><div class="t-body"><div class="t-name">Key Jenkins Plugins</div><div class="t-desc">Blue Ocean (UI), Pipeline, Kubernetes, Docker Pipeline, SonarQube Scanner, Slack Notification, OWASP Dependency-Check, Timestamper.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🗄️</div><div class="t-body"><div class="t-name">Artifact: Nexus / Artifactory</div><div class="t-desc">On-prem artifact repository. Proxies public Maven/npm registries. Stores internal Docker images. Air-gapped support.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Declarative Jenkinsfile</div>
+        <div class="code-block"><span class="cc">// Jenkinsfile</span>
+<span class="ck">@Library</span>(<span class="cs">'pipeline-lib@main'</span>) _
+
+<span class="cn">pipeline</span> {
+  <span class="cn">agent</span> {
+    <span class="cn">kubernetes</span> {  <span class="cc">// ephemeral pod</span>
+      <span class="cn">yaml</span> <span class="cs">"""
+        spec:
+          containers:
+          - name: build
+            image: node:20
+          - name: docker
+            image: docker:24-dind
+      """</span>
+    }
+  }
+  <span class="cn">stages</span> {
+    <span class="cn">stage</span>(<span class="cs">'Build'</span>) {
+      <span class="cn">steps</span> { <span class="cn">sh</span> <span class="cs">'npm ci && npm run build'</span> }
+    }
+    <span class="cn">stage</span>(<span class="cs">'Test'</span>) {
+      <span class="cn">parallel</span> {
+        <span class="cn">stage</span>(<span class="cs">'Unit'</span>)   { <span class="cn">steps</span> { <span class="cn">sh</span> <span class="cs">'npm test'</span> } }
+        <span class="cn">stage</span>(<span class="cs">'Sonar'</span>)  { <span class="cn">steps</span> { <span class="cn">sonarScan</span>() } }
+      }
+    }
+    <span class="cn">stage</span>(<span class="cs">'Deploy'</span>) {
+      <span class="cn">when</span> { <span class="cn">branch</span> <span class="cs">'main'</span> }
+      <span class="cn">steps</span> { <span class="cn">deployToK8s</span>(<span class="cv">env</span>: <span class="cs">'prod'</span>) }
+    }
+  }
+  <span class="cn">post</span> {
+    <span class="cn">failure</span> { <span class="cn">slackSend</span> <span class="cn">message</span>: <span class="cs">"❌ Build failed: ${env.JOB_NAME}"</span> }
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--red);--sc-bg:var(--red-dim);">
+    <div class="stage-head">
+      <div class="stage-num">02</div><div class="stage-icon-wrap">🔐</div>
+      <div class="stage-title-wrap"><div class="stage-title">Security (Enterprise Grade)</div><div class="stage-subtitle">SonarQube · Checkmarx · OWASP ZAP · Vault</div></div>
+      <div class="stage-badge-row"><div class="s-badge">SonarQube</div><div class="s-badge">Checkmarx</div><div class="s-badge">Vault</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">📡</div><div class="t-body"><div class="t-name">SonarQube (self-hosted)</div><div class="t-desc">Enterprise SAST. Quality gates block merges if code coverage drops or new bugs found. Integrates with Bitbucket/GitHub for inline PR comments.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔎</div><div class="t-body"><div class="t-name">Checkmarx / Veracode</div><div class="t-desc">Commercial SAST for high-compliance environments (PCI-DSS, HIPAA). Deep analysis, low false positive rate, compliance reporting.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🌐</div><div class="t-body"><div class="t-name">OWASP ZAP</div><div class="t-desc">Open-source DAST. Run in daemon mode against dev environment. Generates HTML reports of runtime vulnerabilities.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔑</div><div class="t-body"><div class="t-name">HashiCorp Vault</div><div class="t-desc">Centralized secrets management. Jenkins fetches secrets dynamically at runtime — no secrets in Jenkinsfile or env vars ever.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Vault + SonarQube integration</div>
+        <div class="code-block"><span class="cc">// Fetch secret from Vault in pipeline</span>
+<span class="cn">stage</span>(<span class="cs">'Security'</span>) {
+  <span class="cn">steps</span> {
+    <span class="cn">withVault</span>(<span class="cn">vaultSecrets</span>: [[
+      <span class="cn">path</span>: <span class="cs">'secret/myapp/db'</span>,
+      <span class="cn">engineVersion</span>: <span class="cv">2</span>,
+      <span class="cn">secretValues</span>: [[
+        <span class="cn">envVar</span>: <span class="cs">'DB_PASS'</span>,
+        <span class="cn">vaultKey</span>: <span class="cs">'password'</span>
+      ]]
+    ]]) {
+      <span class="cn">sh</span> <span class="cs">'run-integration-tests.sh'</span>
+    }
+
+    <span class="cc">// SonarQube analysis</span>
+    <span class="cn">withSonarQubeEnv</span>(<span class="cs">'SonarQube-Server'</span>) {
+      <span class="cn">sh</span> <span class="cs">'mvn sonar:sonar'</span>
+    }
+
+    <span class="cc">// Quality gate — block deploy if failed</span>
+    <span class="cn">timeout</span>(<span class="cv">5</span>) {
+      <span class="cn">waitForQualityGate</span> <span class="cn">abortPipeline</span>: <span class="cv">true</span>
+    }
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--green);--sc-bg:var(--green-dim);">
+    <div class="stage-head">
+      <div class="stage-num">03</div><div class="stage-icon-wrap">🚀</div>
+      <div class="stage-title-wrap"><div class="stage-title">Deploy On-Prem</div><div class="stage-subtitle">Ansible · Helm · Spinnaker · Approval Gates</div></div>
+      <div class="stage-badge-row"><div class="s-badge">Ansible</div><div class="s-badge">Spinnaker</div><div class="s-badge">Helm</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Deployment Tools</div>
+        <div class="tool-row"><div class="t-icon">📜</div><div class="t-body"><div class="t-name">Ansible</div><div class="t-desc">Agentless deployment to bare-metal or VMs. Idempotent playbooks. Used when Kubernetes is not available or for DB migrations.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🎡</div><div class="t-body"><div class="t-name">Spinnaker</div><div class="t-desc">Netflix open-source CD platform. Multi-cloud. Built-in canary analysis with Kayenta. Approval gates with JIRA ticket integration.</div></div></div>
+        <div class="tool-row"><div class="t-icon">✅</div><div class="t-body"><div class="t-name">Manual Approval Gates</div><div class="t-desc">Jenkins input{} step pauses pipeline and sends Slack/email. Approver clicks link to proceed. Required for SOX compliance prod deploys.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📊</div><div class="t-body"><div class="t-name">On-Prem Monitoring</div><div class="t-desc">Prometheus + Grafana (self-hosted). ELK Stack (Elasticsearch + Logstash + Kibana). Alertmanager → PagerDuty webhook.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Approval gate + Ansible deploy</div>
+        <div class="code-block"><span class="cn">stage</span>(<span class="cs">'Prod Approval'</span>) {
+  <span class="cn">when</span> { <span class="cn">branch</span> <span class="cs">'main'</span> }
+  <span class="cn">steps</span> {
+    <span class="cn">input</span> {
+      <span class="cn">message</span> <span class="cs">'Deploy to Production?'</span>
+      <span class="cn">ok</span>      <span class="cs">'Yes, deploy'</span>
+      <span class="cn">submitter</span> <span class="cs">'ops-team,release-manager'</span>
+    }
+  }
+}
+
+<span class="cn">stage</span>(<span class="cs">'Deploy Prod'</span>) {
+  <span class="cn">steps</span> {
+    <span class="cn">ansiblePlaybook</span>(
+      <span class="cn">playbook</span>: <span class="cs">'deploy.yml'</span>,
+      <span class="cn">inventory</span>: <span class="cs">'inventories/prod'</span>,
+      <span class="cn">extraVars</span>: [
+        <span class="cn">image_tag</span>: <span class="cs">"${env.BUILD_NUMBER}"</span>
+      ]
+    )
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /stack2 -->
+
+
+<!-- ══════════════════════════════════════════════
+     STACK 3 — Azure DevOps
+══════════════════════════════════════════════ -->
+<div class="stack-panel" id="stack3">
+<div class="stages">
+
+  <div class="stage-card" style="--sc-color:var(--purple);--sc-bg:var(--purple-dim);">
+    <div class="stage-head">
+      <div class="stage-num">01</div><div class="stage-icon-wrap">☁️</div>
+      <div class="stage-title-wrap"><div class="stage-title">Azure Repos + Azure Pipelines</div><div class="stage-subtitle">Microsoft ecosystem — tight Azure integration</div></div>
+      <div class="stage-badge-row"><div class="s-badge">Azure Repos</div><div class="s-badge">YAML Pipelines</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">📘</div><div class="t-body"><div class="t-name">Azure Repos</div><div class="t-desc">Git hosting with Branch Policies (require PR, min reviewers, linked work items). Tight integration with Azure Boards for sprint tracking.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔄</div><div class="t-body"><div class="t-name">Azure Pipelines</div><div class="t-desc">Multi-stage YAML pipelines. Microsoft-hosted agents (Windows, Linux, macOS) or self-hosted agents. 10 free parallel jobs for open source.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📋</div><div class="t-body"><div class="t-name">Azure Boards</div><div class="t-desc">Link commits and PRs to work items. Automatic state transitions (PR merged → work item closed). Kanban + Scrum views.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🔑</div><div class="t-body"><div class="t-name">Azure Key Vault + Variable Groups</div><div class="t-desc">Store secrets in Key Vault. Link to Pipeline variable groups. Inject at runtime — never hardcoded in YAML.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">azure-pipelines.yml</div>
+        <div class="code-block"><span class="cn">trigger</span>:
+  <span class="cn">branches</span>: {<span class="cn">include</span>: [<span class="cs">main</span>, <span class="cs">develop</span>]}
+
+<span class="cn">pool</span>:
+  <span class="cn">vmImage</span>: <span class="cs">ubuntu-latest</span>
+
+<span class="cn">variables</span>:
+  <span class="cn">- group</span>: <span class="cs">production-secrets</span>  <span class="cc"># Key Vault link</span>
+  <span class="cn">- name</span>: <span class="cs">imageRepository</span>
+    <span class="cn">value</span>: <span class="cs">myapp</span>
+  <span class="cn">- name</span>: <span class="cs">containerRegistry</span>
+    <span class="cn">value</span>: <span class="cs">mycompany.azurecr.io</span>
+
+<span class="cn">stages</span>:
+  - <span class="cn">stage</span>: <span class="cs">Build</span>
+    <span class="cn">jobs</span>:
+      - <span class="cn">job</span>: <span class="cs">BuildAndTest</span>
+        <span class="cn">steps</span>:
+          - <span class="cn">task</span>: <span class="cs">NodeTool@0</span>
+            <span class="cn">inputs</span>: {<span class="cn">versionSpec</span>: <span class="cs">'20.x'</span>}
+          - <span class="cn">script</span>: <span class="cs">npm ci && npm test</span>
+          - <span class="cn">task</span>: <span class="cs">PublishTestResults@2</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--red);--sc-bg:var(--red-dim);">
+    <div class="stage-head">
+      <div class="stage-num">02</div><div class="stage-icon-wrap">🔐</div>
+      <div class="stage-title-wrap"><div class="stage-title">Security + Artifact</div><div class="stage-subtitle">Microsoft Defender · Azure Container Registry · ACR Tasks</div></div>
+      <div class="stage-badge-row"><div class="s-badge">Defender for DevOps</div><div class="s-badge">ACR</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">🛡️</div><div class="t-body"><div class="t-name">Microsoft Defender for DevOps</div><div class="t-desc">SAST (CodeQL-based), IaC scanning (Bicep/Terraform), secret scanning. Results in Azure Security Center. Free with Microsoft 365.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🗃️</div><div class="t-body"><div class="t-name">Azure Container Registry (ACR)</div><div class="t-desc">Private registry in Azure. Geo-replicate for multi-region. ACR Tasks can build images in the cloud without local Docker daemon.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📦</div><div class="t-body"><div class="t-name">Azure Artifacts</div><div class="t-desc">Private npm, NuGet, Maven, Python feeds. Universal packages for binaries. Upstream sources proxy public registries.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">Docker build + push to ACR</div>
+        <div class="code-block">  - <span class="cn">stage</span>: <span class="cs">DockerBuild</span>
+    <span class="cn">jobs</span>:
+      - <span class="cn">job</span>: <span class="cs">Docker</span>
+        <span class="cn">steps</span>:
+          - <span class="cn">task</span>: <span class="cs">Docker@2</span>
+            <span class="cn">displayName</span>: <span class="cs">Build and push</span>
+            <span class="cn">inputs</span>:
+              <span class="cn">containerRegistry</span>: <span class="cs">MyACRServiceConnection</span>
+              <span class="cn">repository</span>: <span class="cs">$(imageRepository)</span>
+              <span class="cn">command</span>: <span class="cs">buildAndPush</span>
+              <span class="cn">tags</span>: <span class="cs">$(Build.BuildId)</span>
+
+          <span class="cc"># Microsoft Security DevOps scan</span>
+          - <span class="cn">task</span>: <span class="cs">MicrosoftSecurityDevOps@1</span>
+            <span class="cn">inputs</span>:
+              <span class="cn">categories</span>: <span class="cs">code,secrets,IaC</span>
+
+          <span class="cc"># Publish artifact manifest</span>
+          - <span class="cn">task</span>: <span class="cs">PublishBuildArtifacts@1</span>
+            <span class="cn">inputs</span>:
+              <span class="cn">pathToPublish</span>: <span class="cs">manifests/</span>
+              <span class="cn">artifactName</span>: <span class="cs">k8s-manifests</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-card" style="--sc-color:var(--green);--sc-bg:var(--green-dim);">
+    <div class="stage-head">
+      <div class="stage-num">03</div><div class="stage-icon-wrap">🚀</div>
+      <div class="stage-title-wrap"><div class="stage-title">Deploy to AKS</div><div class="stage-subtitle">Azure Kubernetes Service · Environments · Approvals</div></div>
+      <div class="stage-badge-row"><div class="s-badge">AKS</div><div class="s-badge">Azure Environments</div><div class="s-badge">Bicep</div></div>
+    </div>
+    <div class="stage-body">
+      <div class="tool-col">
+        <div class="col-label">Tools</div>
+        <div class="tool-row"><div class="t-icon">⚙️</div><div class="t-body"><div class="t-name">Azure Kubernetes Service (AKS)</div><div class="t-desc">Managed K8s. Use Managed Identity (no service principals needed). Integrate with ACR for pull secrets automatically.</div></div></div>
+        <div class="tool-row"><div class="t-icon">🌍</div><div class="t-body"><div class="t-name">Azure Environments + Approvals</div><div class="t-desc">Define Environment (prod) in Azure DevOps. Add Approval checks — named individuals must approve before stage runs. Full audit log.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📐</div><div class="t-body"><div class="t-name">Bicep / Terraform for IaC</div><div class="t-desc">Bicep is Azure-native ARM DSL. Terraform works cross-cloud. Store state in Azure Storage Account with locking.</div></div></div>
+        <div class="tool-row"><div class="t-icon">📊</div><div class="t-body"><div class="t-name">Azure Monitor + App Insights</div><div class="t-desc">Auto-instrument .NET, Java, Node apps. Application Map shows service dependencies. Smart Detection for anomalies.</div></div></div>
+      </div>
+      <div class="tool-col code-col">
+        <div class="col-label">AKS deploy with approval gate</div>
+        <div class="code-block">  - <span class="cn">stage</span>: <span class="cs">DeployProd</span>
+    <span class="cn">dependsOn</span>: <span class="cs">DeployStaging</span>
+    <span class="cn">jobs</span>:
+      - <span class="cn">deployment</span>: <span class="cs">DeployToAKS</span>
+        <span class="cn">environment</span>: <span class="cs">production</span>  <span class="cc"># approval gate here</span>
+        <span class="cn">strategy</span>:
+          <span class="cn">runOnce</span>:
+            <span class="cn">deploy</span>:
+              <span class="cn">steps</span>:
+                - <span class="cn">task</span>: <span class="cs">KubernetesManifest@1</span>
+                  <span class="cn">inputs</span>:
+                    <span class="cn">action</span>: <span class="cs">deploy</span>
+                    <span class="cn">connectionType</span>: <span class="cs">azureResourceManager</span>
+                    <span class="cn">azureSubscriptionConnection</span>: <span class="cs">MyAzureSub</span>
+                    <span class="cn">azureResourceGroup</span>: <span class="cs">my-rg</span>
+                    <span class="cn">kubernetesCluster</span>: <span class="cs">my-aks</span>
+                    <span class="cn">manifests</span>: <span class="cs">manifests/*.yml</span>
+                    <span class="cn">containers</span>: <span class="cs">$(containerRegistry)/$(imageRepository):$(Build.BuildId)</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /stack3 -->
+
+
+<!-- ── COMPARISON TABLE ── -->
+<div class="cmp-wrap">
+  <div class="cmp-header">Stack Comparison</div>
+  <table class="cmp-table">
+    <tr>
+      <th>Stack</th>
+      <th>Best For</th>
+      <th>CI Platform</th>
+      <th>Registry</th>
+      <th>Deploy</th>
+      <th>Cost Model</th>
+      <th>Learning Curve</th>
+    </tr>
+    <tr>
+      <td>GitHub + AWS</td>
+      <td>Startups, SaaS, open-source products</td>
+      <td><span class="pill pill-g">GitHub Actions</span></td>
+      <td><span class="pill pill-b">ECR</span></td>
+      <td><span class="pill pill-g">ArgoCD / EKS</span></td>
+      <td><span class="pill pill-a">Pay per minute</span></td>
+      <td><span class="pill pill-g">Low</span></td>
+    </tr>
+    <tr>
+      <td>GitLab + GCP</td>
+      <td>Enterprise dev teams, full DevSecOps</td>
+      <td><span class="pill pill-b">GitLab CI</span></td>
+      <td><span class="pill pill-b">Artifact Registry</span></td>
+      <td><span class="pill pill-g">Flux / Cloud Deploy</span></td>
+      <td><span class="pill pill-a">Per seat + usage</span></td>
+      <td><span class="pill pill-a">Medium</span></td>
+    </tr>
+    <tr>
+      <td>Jenkins + On-Prem</td>
+      <td>Air-gapped, regulated (finance, govt)</td>
+      <td><span class="pill pill-p">Jenkins</span></td>
+      <td><span class="pill pill-p">Nexus / Artifactory</span></td>
+      <td><span class="pill pill-p">Ansible / Spinnaker</span></td>
+      <td><span class="pill pill-r">Infra costs</span></td>
+      <td><span class="pill pill-r">High</span></td>
+    </tr>
+    <tr>
+      <td>Azure DevOps</td>
+      <td>Microsoft shops, .NET, enterprise</td>
+      <td><span class="pill pill-p">Azure Pipelines</span></td>
+      <td><span class="pill pill-p">ACR</span></td>
+      <td><span class="pill pill-p">AKS + Environments</span></td>
+      <td><span class="pill pill-a">Per user / minute</span></td>
+      <td><span class="pill pill-a">Medium</span></td>
+    </tr>
+  </table>
+</div>
+
+<div class="foot-note">
+  <strong>💡 Start simple:</strong> If you're greenfield, start with GitHub Actions + a single docker-compose for local dev. Add ECR and EKS when you need scale. Don't configure Spinnaker and Vault from day one — that's overengineering. The best pipeline is the one your team actually understands and maintains. Add complexity only when a specific pain point demands it. Every tool listed here solves a real problem — but only if you have that problem.
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const stacks = ['stack0','stack1','stack2','stack3'];
+const colors = ['#f0a500','#3ecf8e','#4f9cf9','#a78bfa'];
+const btnColors = ['#000','#000','#fff','#fff'];
+
+function switchStack(idx) {
+  stacks.forEach((id, i) => {
+    const panel = document.getElementById(id);
+    const btn   = document.getElementById('btn'+i);
+    if (i === idx) {
+      panel.classList.add('active');
+      btn.classList.add('active');
+      btn.style.background = colors[i];
+      btn.style.color = btnColors[i];
+    } else {
+      panel.classList.remove('active');
+      btn.classList.remove('active');
+      btn.style.background = '';
+      btn.style.color = '';
+    }
+  });
+}
+</script>
+</body>
+</html>
